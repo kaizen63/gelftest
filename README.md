@@ -31,3 +31,22 @@ gelftest [options] [message]
   -verbose
         Be verbose
 ```
+
+# The GELF record:
+```
+
+type Gelf struct {
+	// mandatory fields
+	Version      string `json:"version"`
+	Host         string `json:"host"`
+	ShortMessage string `json:"short_message"`
+	FullMessage  string `json:"full_message"`
+	Timestamp    int64  `json:"timestamp"`
+	Level        int    `json:"level"`
+	// additional fields
+	LogType   string `json:"_logType"` // _logType will show as logType in Graylog
+	SourceEnv string `json:"_source_env"`
+	Type      string `json:"_type"`
+	MessageId int    `json:"_messageId"`
+}
+```
