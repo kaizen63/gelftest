@@ -143,8 +143,13 @@ func main() {
 	gelf.Level = 6
 	gelf.LogType = logType
 	gelf.SourceEnv = sourceEnv
-	gelf.Type = "applog-gelftest"
+	if logType == "APP" {
+		gelf.Type = "applog-gelftest"
 
+	} else {
+		gelf.Type = "eventlog-gelftest"
+
+	}
 	gconn.connect(graylogServer, graylogPort)
 	defer gconn.close()
 
