@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"net"
 	"os"
 	"strings"
@@ -15,17 +16,18 @@ import (
 // The Gelf data structure
 type Gelf struct {
 	// mandatory fields
-	Version      string `json:"version"`
-	Host         string `json:"host"`
-	ShortMessage string `json:"short_message"`
-	FullMessage  string `json:"full_message"`
-	Timestamp    int64  `json:"timestamp"`
-	Level        int    `json:"level"`
+	Version      string  `json:"version"`
+	Host         string  `json:"host"`
+	ShortMessage string  `json:"short_message"`
+	FullMessage  string  `json:"full_message"`
+	Timestamp    float64 `json:"timestamp"`
+	Level        int     `json:"level"`
 	// additional fields
 	LogType   string `json:"_logType"` // _logType will show as logType in Graylog
 	SourceEnv string `json:"_source_env"`
 	Type      string `json:"_type"`
 	MessageId int    `json:"_messageId"`
+	DateTime  string `json:"_dateTime"`
 }
 
 // Strng implements the Stringer interface
@@ -100,6 +102,8 @@ var (
 	sourceEnv         string
 )
 
+const RFC3339Milli = "2006-01-02T15:04:05.999Z07:00"
+
 func main() {
 	var gelf Gelf
 	var gconn GrayLogConn
@@ -139,7 +143,6 @@ func main() {
 		log.Fatal(err)
 	}
 	gelf.Host = hostname
-	gelf.Timestamp = time.Now().Unix()
 	gelf.Level = 6
 	gelf.LogType = logType
 	gelf.SourceEnv = sourceEnv
@@ -150,7 +153,10 @@ func main() {
 		gelf.Type = "eventlog-gelftest"
 
 	}
-	gconn.connect(graylogServer, graylogPort)
+	err = gconn.connect(graylogServer, graylogPort)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer gconn.close()
 
 	for i := 0; i < count; i++ {
@@ -158,7 +164,9 @@ func main() {
 			time.Sleep(time.Duration(sleepMilliseconds) * time.Millisecond)
 		}
 		gelf.MessageId = i + 1
-		gelf.Timestamp = time.Now().Unix()
+		t := time.Now()
+		gelf.Timestamp = math.Round(float64(t.UnixNano())/1e9*1000.0) / 1000.0 // round milliseconds
+		gelf.DateTime = t.Format(RFC3339Milli)
 		err := gelf.sendToGrayLog(gconn.conn)
 		if err != nil {
 			log.Fatal(err)
