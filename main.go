@@ -9,6 +9,7 @@ import (
 	"math"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -48,14 +49,9 @@ type GrayLogConn struct {
 
 // connect to a graylog server
 func (g *GrayLogConn) connect(graylogServer string, graylogPort int) error {
-	serverAddr := fmt.Sprintf("%s:%d", graylogServer, graylogPort)
-
-	tcpAddr, err := net.ResolveTCPAddr("tcp", serverAddr)
-	if err != nil {
-		return err
-	}
+	serverAddr := graylogServer + ":" + strconv.Itoa(graylogPort)
 	var conn net.Conn
-	conn, err = net.DialTCP("tcp", nil, tcpAddr)
+	conn, err := net.Dial(protocol, serverAddr)
 	if err != nil {
 		return err
 	}
@@ -100,6 +96,7 @@ var (
 	sleepMilliseconds int
 	logType           string
 	sourceEnv         string
+	protocol          string
 )
 
 const RFC3339Milli = "2006-01-02T15:04:05.999Z07:00"
@@ -121,6 +118,8 @@ func main() {
 	flag.StringVar(&logType, "t", "APP", "The logtype (APP or EVENT) (shorthand)")
 	flag.StringVar(&sourceEnv, "sourceenv", "dev", "the source_env field in the message")
 	flag.StringVar(&sourceEnv, "e", "dev", "the source_env field in the message (shorthand)")
+	flag.StringVar(&protocol, "protocol", "tcp", "the protocol used")
+	flag.StringVar(&protocol, "P", "tcp", "the protocol used (shorthand)")
 
 	flag.Parse()
 	//fmt.Printf("len: %d, value: %v\n", len(flag.Args()), flag.Args())
